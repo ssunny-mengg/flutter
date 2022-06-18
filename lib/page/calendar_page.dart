@@ -5,15 +5,14 @@ import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:calendar/service/event_service.dart';
 
-
 class CalendarPage extends StatefulWidget {
   @override
   _CalendarPageState createState() => _CalendarPageState();
 }
 
 class _CalendarPageState extends State<CalendarPage> {
-  late EventModel temp;
   late Future<List<EventModel>> futureEvent;
+  late List<EventModel> _listEventModelOnSelectDay;
   late Map<DateTime, List<EventModel>> _events;
   late Map<DateTime, List<EventModel>> _selectedEvents;
   CalendarFormat format = CalendarFormat.month;
@@ -27,6 +26,7 @@ class _CalendarPageState extends State<CalendarPage> {
     super.initState();
     futureEvent = EventService.fetchEvents();
     _events = {};
+    _listEventModelOnSelectDay = [];
   }
 
   String formatDateTime(String dateTime) {
@@ -34,9 +34,8 @@ class _CalendarPageState extends State<CalendarPage> {
   }
 
   List<EventModel> _getEventForDay(DateTime day) {
-    return _events[day]??[];
+    return _events[day] ?? [];
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -47,11 +46,10 @@ class _CalendarPageState extends State<CalendarPage> {
       ),
       body: Column(
         children: [
-          FutureBuilder <List<EventModel>>(
+          FutureBuilder<List<EventModel>>(
             future: EventService.fetchEvents(),
-            builder: (_,snapshot){ 
-              return
-              TableCalendar(
+            builder: (_, snapshot) {
+              return TableCalendar(
                 focusedDay: selectedDay,
                 firstDay: DateTime(1990),
                 lastDay: DateTime(2050),
@@ -61,23 +59,34 @@ class _CalendarPageState extends State<CalendarPage> {
                     format = _format;
                   });
                 },
-
                 onDaySelected: (DateTime selectDay, DateTime focusDay) {
+                  late EventModel temp;
                   setState(() {
                     selectedDay = selectDay;
                     focusedDay = focusDay;
                   });
-                  for(int i = 0; i < snapshot.data!.length; i++) {
-                    if(formatDateTime(snapshot.data![i].deadLine) == selectDay.toString()) {
-                      temp = snapshot.data![i];
+                  _listEventModelOnSelectDay.clear();
+                  for (int i = 0; i < snapshot.data!.length; i++) {
+                    if (formatDateTime(snapshot.data![i].deadLine) ==
+                        formatDateTime(selectDay.toString())) {
+                      _listEventModelOnSelectDay.add(snapshot.data![i]);
                     }
                   }
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => testNavigatorPagge(testEvent: temp,),));
+                  if (_listEventModelOnSelectDay.isNotEmpty) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => testNavigatorPagge(
+                          listEvent: _listEventModelOnSelectDay,
+                        ),
+                      ),
+                    );
+                  }
+                  print('No Event');
                 },
                 selectedDayPredicate: (DateTime date) {
                   return isSameDay(selectedDay, date);
                 },
-                
                 calendarStyle: const CalendarStyle(
                   selectedDecoration: BoxDecoration(
                     color: Colors.blue,
